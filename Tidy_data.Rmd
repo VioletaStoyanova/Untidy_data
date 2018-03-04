@@ -1,0 +1,70 @@
+---
+title: "Untidy_data"
+author: "Violeta Stoyanova"
+date: "3/3/2018"
+output: html_document
+---
+
+```{r}
+#For the purposes of this assignment I uploaded the dataset from MySQL. 
+rm(list=ls())
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+
+myurl <- "https://raw.githubusercontent.com/VioletaStoyanova/Untidy_data/master/flights.csv"
+data<- read.csv(myurl, header = TRUE, stringsAsFactors = FALSE)
+data
+names(data) <- c("ID","Airline","Schedule", "Los Angeles", "Phoenix", "San Diego",
+                       "San Francisco", "Seattle")
+
+colnames(data)
+
+```
+
+```{r}
+#Then I created a data frame where I added Airline names in column 2 row 2 and column 2 row 4. 
+
+data[2,2]<-c("ALASKA")
+data[4,2]<-c("AM WEST")
+data_df<-data.frame(data,stringsAsFactors=FALSE)
+data_df[]<-lapply(data_df,as.array)
+head(data_df)
+
+```
+```{r}
+#I attempted to group all the cities together and separated them by frequency.
+flights<-data%>%
+  gather(City,Freq,4:8) %>% select (-ID)
+
+head(flights)
+#At this step the two variables delayed and on time were separated into two columns.
+temp <- flights%>%
+  spread(Schedule,Freq)
+
+str(temp$`delayed `) #this is the point where I realized that my delayed variable had a space and it was giving me trouble when I was trying to use the function mutate. 
+mutate(temp, total_flight = `delayed `+on_time)
+
+colnames(temp)
+
+```
+```{r}
+#I was suspiciuos and wanted to see the total number of flights comapring to the total percentage of delay between the two airlines. 
+total_flights<- group_by(temp, Airline) %>% 
+    summarise(total_delayed=sum(`delayed `), total_ontime=sum(on_time), total=sum(`delayed `+on_time))
+
+head(total_flights)
+
+
+```
+```{r}
+# And my suspicions were right as one can see that the total number of flights of AM WEST is 7225 and the total number of flights of ALASKA is 3775 it would be a mistake to conclude that AM WEST had more delays because they had more flights comapring to ALASKA.
+sum_airline<- group_by(temp, Airline) %>% 
+    summarise(avg_delay = mean(`delayed `), avg_on_time = mean(on_time)) %>% 
+    mutate(percent_delay=100*(avg_delay/(avg_delay+avg_on_time))) 
+sum_airline
+
+```
+
+
+
